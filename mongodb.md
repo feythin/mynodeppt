@@ -5,12 +5,14 @@ transition: horizontal3d
 files: /js/demo.js,/css/moon.css,/js/zoom.js
 theme: dark
 
-[slide style="background-image:url('/img/blackops.jpg')"]
+[slide style="background-image:url('/img/blackops.jpg');background-repeat:no-repeat;background-position: center center;"]
 
 # mongodb性能测试
-<small>Created by <a href="http://liufeiyu.cn">Feythin</a></small><br>
+## 刘飞宇(feythin.lau)
 <small>Weibo: <a href="http://weibo.com/539167012">@Feythin</a></small><br>
-<small>Blog: <a href="http://liufeiyu.cn">http://liufeiyu.cn</a></small>
+<small>Email: <a href="mailto:liufeyu@55tuan.com">liufeiyu@55tuan.com</a></small><br>
+<small>Blog: <a href="http://liufeiyu.cn">ww.liufeiyu.cn</a></small><br>
+<small><i class="fa fa-github"></i>github:  <a href="https://github.com/feythin">@feythin</a></small><br>
 
 [slide data-transition="horizontal3d"]
 ## mongodb测试简介
@@ -23,7 +25,7 @@ theme: dark
 
 [slide]
 
-## mognod测试环境
+## mongodb测试环境
 ----
 ### 软件环境
 * OS: CentOS release 6.5  kern：2.6.32-431.3.1.el6.x86_64 {:&.rollIn}
@@ -32,7 +34,7 @@ theme: dark
 
 [slide]
 
-## mognod测试环境
+## mongodb测试环境
 ----
 ### 硬件环境
 * Server*3 虚拟机 {:&.rollIn}
@@ -42,13 +44,13 @@ theme: dark
 
 [slide]
 
-## mognod测试架构
+## mongodb测试架构
 ----
 * MongoDB replication architecture
 
 [slide]
 
-## mognod测试架构
+## mongodb测试架构
 ----
 ![replication](/img/replications.png "replication")
 <pre><code>
@@ -59,7 +61,7 @@ theme: dark
 
 [slide]
 
-## mognod测试数据集
+## mongodb测试数据集
 ----
 <pre><code class="javascript">
 {
@@ -202,8 +204,8 @@ shards:
 <pre><code>
 databases:
   {  "_id" : "admin",  "partitioned" : false,  "primary" : "config" }
-  {  "_id" : "hawaii",  "partitioned" : true,  "primary" : "rs1" }
-    hawaii.userinfo
+  {  "_id" : "wowotest",  "partitioned" : true,  "primary" : "rs1" }
+    wowotest.userinfo
     shard key: { "_id" : 1 }
       chunks:
         rs1     7
@@ -224,432 +226,168 @@ databases:
 
 </code>
 </pre>
+
 [slide]
 
-## 基本语法指南 {:&.flexbox.vleft}
+## MongoDB副本集分片模式下不同引擎的磁盘占用情况
+----
+![replication disk](/img/shard-disk.png "replication disk")
+
+----
+* 在副本集分片模式下的，插入100w数据的磁盘占比情况：从图中可以看出，Wiretiger占用 0.027GB， Mmap占用0.656GB，磁盘占用情况跟没分片的差不多。
+
+[slide]
+
+## MongoDB副本集分片模式下插入100w数据时间情况
+----
+![replication insert](/img/shard-insert.png "replication insert")
+
+----
+* 在副本集分片模式下的，插入100w数据的不同引擎下的插入时间对比情况：
+从图中可以看出，wiretiger引擎下，插入效率要高。Wiretiger花费时间2129.93s，MMAPv1花费时间2511.93s。
+
+
+[slide]
+
+## MongoDB副本集分片模式下随机查询100w数据
+----
+![replication query](/img/shard-query.png "replication query")
+----
+* 在副本集分片模式下，使用单线程随机读取100w数据，使用WireTiger引擎查询占用时间24.68s，使用MMAPv1引擎查询，占用时间24.80s。
+由此可见，WireTiger引擎下查询的效率比MMAPv1引擎提高不是很明显。
+
+
+[slide]
+
+## MongoDB副本集分片模式下随机删除100w数据
+----
+![replication delete](/img/shard-delete.png "replication delete")
+----
+* 在副本集分片模式下,使用单线程随机删除100w数据，发现使用mmap删除的时间要短，跟理论有差距。MMAP引擎，删除时间：130.17s，wiretiger引擎删除时间：145.53s。
+
+
+[slide]
+
+## MongoDB多线程下测试
+----
+![replication delete](/img/shard-delete.png "replication delete")
+----
+* 在副本集分片模式下,使用单线程随机删除100w数据，发现使用mmap删除的时间要短，跟理论有差距。MMAP引擎，删除时间：130.17s，wiretiger引擎删除时间：145.53s。
+
+
+[slide]
+
+## 基于yahoo的ycsb测试
+### mongodb 2.6.1 MMAPv1引擎 副本集集群 读写比例95:5 
+----
+![replication mmap](/img/mongo-261-mmap-95.jpg "replication mmap")
+----
+* case：使用MMAPv1引擎，副本级集群。测试100w数据在查询和插入比例为95:5的情况下的查询，插入性能。查询和插入使用同一台mongodb {:&.rollIn}
+* collections为单一id索引
+
+[slide]
+
+### mongodb 2.6.1 MMAPv1引擎 副本集集群 读写比例95:5 
+----
+![replication mmap](/img/mongo-261-mmap-95.jpg "replication mmap")
+----
+* 使用yahoo的ycsb测试程序对数据库做大约95%查询和5%的插入同时处理。测试不同线程下的查询和插入平均延迟情况。 {:&.bounceIn}
+**说明：中间20个进程出现插入很高的情况可能是当时服务器IO延迟大。**
+* 从中可以看出：
+  * 随着线程的增加，查询和插入的延迟时间也相应增加。 {:&.rollIn}
+  * 随着线程的增加，lockdb有出现100%情况（少量，使用mongodbstat查看，上面图表没有反应），qr和qw出现次数增多，ar和aw次数也相应增多）
+
+[slide]
+
+### mongodb 2.6.1 MMAPv1引擎 副本集集群 读写比例90:10 
+----
+![replication mmap](/img/mongo-261-mmapv1-90.jpg "replication mmap")
+----
+* Case：使用MMAPv1引擎，副本级集群。测试100W数据在查询和插入比例为90:10的情况下的查询和插入性能。 {:&.rollIn}
+* Collections使用id做索引
+* 使用yahoo的ycsb测试。
+* 从中可以看出：
+  * 随着线程增加，查询和插入性能的延迟也相应增加。
+
+[slide]
+####mongodb 2.6.1 **MMAPv1引擎** 副本集集群 读写比例90:10/95:5 对比图
+----
+![replication mmap](/img/mongo-261-mmap-90-95.jpg "replication mmap")
+----
+* Case：Mongodb2.6.1 MMAPv1引擎 副本集模式。测试100w数据在查询和插入比例90:10和比例为95:5的情况下的对比。 {:&.bounceIn}
+* 从图中可以看出:
+  * 查询和插入出现不规律性，跟测试的时候宿主的cpu，磁盘使用情况有关，总的可以看出，比例为95:5的插入和读取情况要比比例为90:10的时间要小。
+
+[slide]
+####mongodb 3.0.2 **MMAPv1引擎** 副本集集群 读写比例95:5
+----
+![replication mmap](/img/mongo-302-mmap-95.jpg "replication mmap")
 ----
 
-<pre><code class="markdown">/* 先写总的配置 */
-title: 这是title，网页名称
-speaker: 演讲者名称
-url: https://github.com/ksky521/nodePPT
-transition: 全局转场动画
-files: 引入的js和css文件，多个以半角逗号隔开
-hightStyle: 代码高亮样式，默认monokai_sublime
-
-/* 以&#91;slide&#93; 隔开每个ppt页面 */
-&#91;slide&#93;
-## 二级标题
-这里写内容即可
-
-&#91;slide&#93;
-...
-</code>
-</pre>
-
-
-
-[slide style="background-image:url('/img/bg1.png')"]
-
-# 支持单页添加背景图片 {:&.flexbox.vleft}
-## 使用方法：&#91;slide style="background-image:url('/img/bg1.png')"&#93;
+* Case：Mongodb3.0.2 MMAPv1引擎副本集模式，读写比例为95:5。测试100w数据在查询和插入比例为95:5比例情况下的对比.  {:&.rollIn}
+* 从图中可以看出:
+  * 随着线程数的增加，查询时的时间是越来越长的。插入时间在达到50线程后出现明显的提高。
 
 [slide]
-## 支持.class/#id/自定义属性样式
+####mongodb 3.0.2 **Wiretiger引擎** 副本集集群 读写比例95:5
+----
+![replication wire](/img/mongo-302-wire-95.jpg "replication wire")
 ----
 
-```html
-使用：.class{:.class}
-使用：#id{:#id}
-组合使用：{:.class.class2 width="200px"}
-父元素样式使用&：{:&.class}
-```
+* Case：mongodb3.0.2 **wiretiger引擎** 副本集模式，读写比例95:5。测试100w数据在查询和插入的比例为95:5比例下的对比。 {:&.bounceIn}
+* 从图中可以看出：
+  * 读写时间也是随着线程的增加而相应增加的。线程大了之后，插入时间有明显的提高。
 
 [slide]
-
-## 主页面样式
-### ----是上下分界线
+####mongodb 3.0.2 **Wiretiger引擎** 和 **MMAPv1引擎** 对比
+----
+![replication wire](/img/mongo-302-wire-mmap-95.jpg "replication wire")
 ----
 
-nodeppt是基于nodejs写的支持 **Markdown!** 语法的网页PPT
-
-nodeppt：https://github.com/ksky521/nodePPT
-
-[slide]
-
-[subslide]
-## 这是一个列表
----
-* 上下左右方向键翻页
-    * 列表支持渐显动画 {:&.moveIn}
-    * 支持多级列表
-    * 这个动画是moveIn
-* 完全基于markdown语法哦
-============
-## 这是一个数字类型列表，这是一个subslide页面
----
-1. 数字列表 {:&.rollIn}
-2. 数字列表
-3. 数字列表，这是一个subslide页面
-[/subslide]
+* Mongodb3.0.2版本，读写比例95:5，两种引擎下的对比. {:&.rollIn}
+* 从图中可以看出:
+  * 两种引擎下的读性能差别不是很大，线程大了后，wiretiger引擎表现的读时间少些，表现的性能要好些，但是提高的不明显。 {:&.rollIn}
+  * 两种引擎下的写性能有较明显的差别，wiretiger引擎不论在线程数多少的情况下，都比mmapv1引擎要表现的好些，尤其是在线程数明显增大的情况下，写性能优势更明显。
 
 [slide]
-## 列表渐显动画：fadeIn
+#### **mongodb2.6.1** 和 **mongodb3.0.2** 在 **MMAPv1引擎** 副本集集群 读写比例95:5 对比
 ----
-* 列表支持渐显动画哦 {:&.fadeIn}
-    * 使用方法
-    * markdown列表第一条加上：{:&.动画类型}
-* 动画类型
-    * fadeIn
-    * rollIn
-    * bounceIn
-    * moveIn
-    * zoomIn
-
-[slide]
-## 列表渐显动画：zoomIn
+![replication wire](/img/mongo-261-302-95.jpg "replication wire")
 ----
-* 列表支持渐显动画哦 {:&.zoomIn}
-* 动画类型
-    * fadeIn
-    * rollIn
-    * bounceIn
-    * moveIn
-    * zoomIn
+* mongodb2.6.1，mongodb3.0.2 版本在MMAPv1引擎下，读写比例为95:5的性能测试对比. {:&.rollIn}
+* 从图中可以看出:
+  * 同在MMAPv1引擎下，高版本的mongodb写性能差别大些，写性能差别较小，但是都比低版本的mongodb性能要好些。
+
 
 [slide]
-## 列表渐显动画：bounceIn
+#### **mongodb2.6.1** 和 **mongodb3.0.2** 在 **wiretiger引擎** 副本集集群 读写比例95:5 对比
 ----
-* 列表支持渐显动画哦 {:&.bounceIn}
-* 动画类型
-    * fadeIn
-    * rollIn
-    * bounceIn
-    * moveIn
-    * zoomIn
-
-
-
-[slide]
-## 表格示例
-### 市面上主要的css预处理器：Less\Sass\Stylus
----
-| Less | Sass | Stylus
-:-------|:------:|-------:|--------
-环境 |js/nodejs | Ruby(这列右对齐) | nodejs(高亮) {:.highlight}
-扩展名 | .less | .scss/.sass | .styl
-特点 | 老牌，用户多，支持js解析 | 功能全，有成型框架，发展快 | 语法多样，小众
-案例/框架 | [Bootstrap](http://getbootstrap.com/) | [Compass](http://beta.compass-style.org) [Bootstrap](http://getbootstrap.com/css/#sass) [Foundation](http://foundation.zurb.com/) [Bourbon](http://bourbon.io) [Base.Sass](https://github.com/jsw0528/base.sass) |
-
-
-[slide]
-## text
------
-
-<span class="text-danger">.text-danger</span> <span class="text-success">.text-sucess</span><span class="text-primary">.text-primary</span>
-
-<span class="text-warning">.text-warning</span><span class="text-info">.text-info</span><span class="text-white">.text-white</span><span class="text-dark">.text-dark</span>
-
-
-<span class="blue">.blue</span><span class="blue2">.blue2</span><span class="blue3">.blue3</span><span class="gray">.gray</span><span class="gray2">.gray2</span><span class="gray3">.gray3</span>
-
-<span class="red">.red</span><span class="red2">.red2</span><span class="red3">.red3</span>
-
-<span class="yellow">.yellow</span><span class="yellow2">.yellow2</span><span class="yellow3">.yellow3</span><span class="green">.green</span><span class="green2">.green2</span><span class="green3">.green3</span>
-
-[slide]
-## label and link
-<span class="label label-primary">.label.label-primary</span><span class="label label-warning">.label.label-warning</span><span class="label label-danger">.label.label-danger</span><span class="label label-default">.label.label-default</span><span class="label label-success">.label.label-success</span><span class="label label-info">.label.label-info</span>
-
-<a href="#">link style</a> <mark>mark</mark>
-
-[slide]
-## blockquote
+![replication wire](/img/mongo-261-mmap-302-wire-95.jpg "replication wire")
 ----
-
-> nodeppt可能是迄今为止最好用的web presentation <small>三水清</small>
-
-
-下面是另外一种样式
-
-> 这是一个class是：pull-right的blockquote <small>small一下</small> {:&.pull-right}
+* mongodb2.6.1，MMAPv1引擎与mongodb3.0.2 wiretiger引擎在读写比例为95:5下的性能测试对比. {:&.rollIn}
+* 从图中可以看出:
+  * 新版本的mongodb在wiretiger引擎下的写性能优势比低版本的MMAPv1引擎高很多。 {:&.rollIn}
+  * 读性能在线程数增加时表现的优势也越来越明显些。
 
 [slide]
-## buttons
+#### **mongodb2.6.1** 和 **mongodb3.0.2** 吞吐率比较
 ----
-
-<button class="btn btn-default">.btn .btn-default</button>  <button class="btn btn-primary">.btn.btn-lg.btn-primary</button> <button class="btn btn-warning">.btn.btn-waring</button> <button class="btn btn-success">.btn.btn-success</button> <button class="btn btn-danger">.btn.btn-danger</button>
-
-
-
-<button class="btn btn-lg btn-default">.btn.btn-lg.btn-default</button> <button class="btn btn-xs btn-success">.btn.btn-xs.btn-success</button> <button class="btn btn-sm btn-primary">.btn.btn-sm.btn-primary</button> <button class="btn btn-rounded btn-warning">.btn.btn-rounded.btn-waring</button>  <button class="btn btn-danger" disabled="disabled">disabled.btn.btn-danger</button>
-
-
-<button class="btn btn-success"><i class="fa fa-share mr5"></i></button>
-
-[slide]
-## icons: Font Awesome
-------
-
-<i class="fa fa-apple"></i>
-<i class="fa fa-android"></i>
-<i class="fa fa-github"></i>
-<i class="fa fa-google"></i>
-<i class="fa fa-linux"></i>
-<i class="fa fa-css3"></i>
-<i class="fa fa-html5"></i>
-<i class="fa fa-usd"></i>
-<i class="fa fa-pie-chart"></i>
-<i class="fa fa-file-video-o"></i>
-<i class="fa fa-cog"></i>
-
-
-[slide]
-
-## 代码格式化
-### 使用 `highlightjs` 进行语法高亮
+![replication wire](/img/throughout.png "replication wire")
 ----
-<div class="columns-2">
-    <pre><code class="javascript">(function(window, document){
-    var a = 1;
-    var test = function(){
-        var b = 1;
-        alert(b);
-    };
-    //泛数组转换为数组
-    function toArray(arrayLike) {
-        return [].slice.call(arrayLike);
-    }
-}(window, document));
-    </code></pre>
-    <pre><code class="javascript">(function(window, document){
-    var a = 1;
-    var test = function(){
-        var b = 1;
-        alert(b);
-    };
-    //泛数组转换为数组
-    function toArray(arrayLike) {
-        return [].slice.call(arrayLike);
-    }
-}(window, document));
-    </code></pre>
-</div>
-
-
+* 副本集模式下，两个版本引擎在95％读取和5%的更新场景。显示wiretiger引擎有差不多两倍的吞吐量，这个比官方测试的4倍多的吞吐量有差别。 {:&.rollIn}
+* 在MongoDB2.6中，并发控制是在数据库级别，而且写会阻塞读操作，从而降低总体的并发量。通过这次测试，我们看到MongoDB 3.0更加细粒的并发性控制明显提高了总并发量。
 
 [slide]
-## 支持多种皮肤
-----
+## **结论**
+* 启用wiretiger引擎后，磁盘占用大概比mmap引擎减少了75%-85% {:&.bounceIn}
+* 副本集模式下，新版本mmap/wiretiger引擎的插入和删除要好。
+* 副本集模式下，新版本的查询效率差不多（测试的时候没有测试secondary read模式）
+* 多线程模式下，在查询插入比例为95:5时，新版本表现性能的比老版本好。使用wiretiger引擎插入性能有明显的提高。
+* Shard+replica模式（提前建索引或者没有提前建索引）下，插入和删除效率没有replica模式下好。
+## **建议**  {:&.rollIn}
+* 在出现很大性能问题时，可以先把测试的版本升级到3.0.2后，看运行情况，再升级到wiretiger引擎。 
+## **注意**  {:&.rollIn}
+* 本测试没有覆盖数据的备份，恢复。在shard+replica模式下插入遇到两次连接中断情况。
 
-[colors](/)-[moon](?theme=moon)-[blue](?theme=blue)-[dark](?theme=dark)-[green](?theme=green)-[light](?theme=light)
-
-
-[slide data-incallback="testScriptTag"]
-## 支持 HTML 和 markdown 语法混编
-----
-
-<div class="file-setting">
-    <p>这是html</p>
-</div>
-<p id="css-demo">这是css样式</p>
-<p>将html代码直接混编到**markdown**文件中即可</p>
-
-我是js控制的颜色 black {:#testScriptTag}
-
-<script>
-    function testScriptTag(){
-        document.getElementById('testScriptTag').style.color = 'black';
-    }
-
-</script>
-<style>
-#css-demo{
-    color: red;
-}
-</style>
-
-
-[slide]
-## iframe效果
-----
-<iframe data-src="http://www.baidu.com" src="about:blank;"></iframe>
-
-[slide]
-## 动画样式强调
-----
-
-这段话里面的**加粗**和*em*字体会动画哦~
-
-按下【H】键查看效果
-
-
-[slide]
-## 支持zoom.js
-----
-
-增加了zoom.js的支持，在演示过程中使用`alt`+鼠标点击，则点击的地方就开始放大，再次`alt+click`则回复原装
-
-[slide]
-
-## 图片，点击全屏
-----
-
-![小萝莉](/girl.jpg "小萝莉")
-
-
-[slide]
-[note]
-##这里是note
-
-使用n键，才能显示
-[/note]
-## 使用note笔记
-### note笔记是多窗口，或者自己做一些笔记用的
----
-按下键盘【N】键测试下note，
-
-markdown语法如下：
-```markdown
-[note]
-这里是note，{ 要换成中括号啊！！
-{/note]
-```
-[slide]
-
-## 使用画笔
-### 使用画笔做标记哦~你也可以随便作画啊！
----
-按下键盘【P】键。按下鼠标左键，在此处乱花下看看效果。
-
-按下键盘【C】键。清空画板
-
-[slide]
-
-## 宽度不够？？
----
-按下键盘【W】键，切换到更宽的页面看效果，第二次按键返回
-
- |less| sass | stylus
-:-------|:------:|-------:|--------
-环境 |js/nodejs | Ruby(这列右对齐) | nodejs(高亮) {:.highlight}
-扩展名 | .less | .sass/.scss | .styl
-特点 | 老牌，用户多，支持js解析 | 功能全，有成型框架，发展快 | 语法多样，小众
-案例/框架 | [Bootstrap](http://getbootstrap.com/) | [compass](http://compass-style.org) [bourbon](http://bourbon.io) |
-
-[slide]
-## 使用overview模式
----
-按下键盘【O】键。看下效果。
-
-在overview模式下，方向键下一页，【enter】键进入选中页
-
-或者按下键盘【O】键，退出overview模式
-
-[slide]
-
-## 多窗口演示
-## 双屏演示不out！
----
-本页面网址改成 [url?_multiscreen=1](?_multiscreen=1)，支持多屏演示哦！
-
-跟powderpoint一样的双屏功能，带有备注信息。
-
-[slide]
-## 20种转场动画随心换
-----
- * <a href="?transition=slide">slide</a>/<a href="?transition=slide2">slide2</a>/<a href="?transition=slide3">slide3</a>
- * [newspaper](?transition=newspaper)
- * [glue](?transition=glue)
- * [kontext](?transition=kontext)/[vkontext](?transition=vkontext)
- * [move](?transition=move)/[circle](?transition=circle)
- * [horizontal](?transition=horizontal)/[horizontal3d](?transition=horizontal3d)
- * [vertical3d](?transition=vertical3d)
- * [zoomin](?transition=zoomin)/[zoomout](?transition=zoomout)
- * [cards](?transition=cards)
- * [earthquake](?transition=earthquake)/[pulse](?transition=pulse)/[stick](?transition=stick)...
-
-
-[slide data-transition="glue"]
-
-## 这是一个glue的动画
-----
-使用方法（全局设置） 1：
-
-> transition: glue
-
-
-[slide data-transition="glue"]
-
-## 这是一个glue的动画
-----
-使用方法 2：
-
-&#91;slide data-transition="glue"&#93;
-
-[slide data-transition="zoomin"]
-
-## 这是一个zoomin的动画
-----
-使用方法：
-
-&#91;slide data-transition="zoomin"&#93;
-
-[slide data-transition="vertical3d"]
-
-## 这是一个vertical3d的动画
-----
-使用方法：
-
-&#91;slide data-transition="vertical3d"&#93;
-
-[slide data-outcallback="outcallback" data-incallback="incallback" ]
-## 使用回调
-----
-
-* &#91;slide data-outcallback="fnName"&#93;
-    * 进入执行回调incallback函数
-* &#91;slide data-incallback="fnName"&#93;
-    * 退出执行outcallback函数
-
-亦可以组合写：
-
-> &#91;slide data-outcallback="foo" data-incallback="bar"&#93;
-
-
-<p id="incallback"></p>
-<p id="outcallback"></p>
-
-[slide]
-## 远程执行函数
-----
-在多屏和远程模式中，可以使用`proxyFn`来远程执行函数。
-
-```html
-<script>
-function globalFunc(){
-}
-</script>
-<button onclick="Slide.proxyFn('globalFunc')" class="btn btn-default">远程执行函数</button>
-```
-
-<button onclick="Slide.proxyFn('globalFunc','args')" class="btn btn-default">测试远程执行函数</button>
-<a href="?_multiscreen=1#33">在多屏中测试远程执行</a>
-<script>
-    function globalFunc(a){
-        alert('proxyFn success: '+a);
-    }
-</script>
-
-
-[slide]
-
-## 更多玩法
----
-https://github.com/ksky521/nodePPT
-
-什么？这些功能还不够用？
-
-socket远程控制可以在手机上摇一摇换页哦~
-
-查看项目目录ppts获取更多帮助信息
+[slide style="background-image:url('/img/blackops.jpg');background-repeat:no-repeat;background-position: center center;"]
+# Q&A
